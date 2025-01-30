@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -22,16 +23,26 @@ func main() {
 
 	bounds := img.Bounds()
 
+	//asciiChars := []byte(" .,:;i1tfLCG08@")
+	//asciiChars := []byte(" .:;+xX$&")
+	asciiChars := reverse([]byte("@%#*+=-:. "))
+	var asciiArt string
+
 	grayscaleImg := image.NewGray(bounds)
-	for x := bounds.Min.X; x < bounds.Max.X; x++ {
-		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+	for y := bounds.Min.Y; y < bounds.Max.Y; y += 2 { // Skip every other row for better aspect ratio
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			pxColor := img.At(x, y)
-			pxGrayscaleColor := color.GrayModel.Convert(pxColor)
+			pxGrayscaleColor := color.GrayModel.Convert(pxColor).(color.Gray)
 			grayscaleImg.Set(x, y, pxGrayscaleColor)
+
+			charIndex := int(float64(pxGrayscaleColor.Y/255) * float64(len(asciiChars)-1))
+			asciiArt += string(asciiChars[charIndex])
 		}
 
-		//fmt.Println()
+		asciiArt += "\n"
 	}
+
+	fmt.Println(asciiArt)
 
 	file, err := os.Create("tmp.jpeg")
 	if err != nil {
@@ -42,7 +53,16 @@ func main() {
 	if err = jpeg.Encode(file, grayscaleImg, nil); err != nil {
 		panic(err.Error())
 	}
-	//fmt.Println(bounds)
-	//fmt.Println(img.At(0, 0))
-	//fmt.Println(img.At(100, 100))
+}
+
+func reverse(input []byte) []byte {
+	// Create a new slice with the same length as the input
+	reversed := make([]byte, len(input))
+
+	// Copy values from the input slice into reversed, in reverse order
+	for i, j := 0, len(input)-1; i < len(input); i, j = i+1, j-1 {
+		reversed[i] = input[j]
+	}
+
+	return reversed
 }
