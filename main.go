@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"image/jpeg"
 	_ "image/jpeg"
+	"math"
 	"os"
 )
 
@@ -25,7 +26,8 @@ func main() {
 
 	//asciiChars := []byte(" .,:;i1tfLCG08@")
 	//asciiChars := []byte(" .:;+xX$&")
-	asciiChars := reverse([]byte("@%#*+=-:. "))
+	//asciiChars := reverse([]byte("@%#*+=-:. "))
+	asciiChars := reverse([]byte("$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "))
 	var asciiArt string
 
 	grayscaleImg := image.NewGray(bounds)
@@ -35,7 +37,7 @@ func main() {
 			pxGrayscaleColor := color.GrayModel.Convert(pxColor).(color.Gray)
 			grayscaleImg.Set(x, y, pxGrayscaleColor)
 
-			charIndex := int(float64(pxGrayscaleColor.Y/255) * float64(len(asciiChars)-1))
+			charIndex := int(math.Ceil(float64(len(asciiChars)-1) * float64(pxGrayscaleColor.Y/255)))
 			asciiArt += string(asciiChars[charIndex])
 		}
 
