@@ -57,11 +57,20 @@ func main() {
 	}
 }
 
+func clampDimmensions(bounds image.Rectangle) {
+	originalWidth := bounds.Max.X
+	originalHeight := bounds.Max.Y
+
+	targetWidth := 200
+	targetHeight := (originalHeight * targetWidth) / originalWidth
+
+	scaledImg := image.NewNRGBA(image.Rect(0, 0, targetWidth, targetHeight))
+	fmt.Println(scaledImg)
+}
+
 func reverse(input []byte) []byte {
-	// Create a new slice with the same length as the input
 	reversed := make([]byte, len(input))
 
-	// Copy values from the input slice into reversed, in reverse order
 	for i, j := 0, len(input)-1; i < len(input); i, j = i+1, j-1 {
 		reversed[i] = input[j]
 	}
