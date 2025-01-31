@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	targetWidth := 300
+	targetWidth := 400
 	targetHeight := 0
 
 	f, err := os.Open("image-02.jpeg")
