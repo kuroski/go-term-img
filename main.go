@@ -6,12 +6,14 @@ import (
 	"image/color"
 	"image/jpeg"
 	_ "image/jpeg"
-	"math"
 	"os"
 )
 
 func main() {
-	f, err := os.Open("image.jpeg")
+	targetWidth := 300
+	targetHeight := 0
+
+	f, err := os.Open("image-02.jpeg")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -22,28 +24,9 @@ func main() {
 		panic(err.Error())
 	}
 
-	bounds := img.Bounds()
+	scaledImg := clampDimensions(img, targetWidth, targetHeight)
 
-	//asciiChars := []byte(" .,:;i1tfLCG08@")
-	//asciiChars := []byte(" .:;+xX$&")
-	//asciiChars := reverse([]byte("@%#*+=-:. "))
-	asciiChars := reverse([]byte("$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "))
-	var asciiArt string
-
-	grayscaleImg := image.NewGray(bounds)
-	for y := bounds.Min.Y; y < bounds.Max.Y; y += 2 { // Skip every other row for better aspect ratio
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			pxColor := img.At(x, y)
-			pxGrayscaleColor := color.GrayModel.Convert(pxColor).(color.Gray)
-			grayscaleImg.Set(x, y, pxGrayscaleColor)
-
-			charIndex := int(math.Ceil(float64(len(asciiChars)-1) * float64(pxGrayscaleColor.Y/255)))
-			asciiArt += string(asciiChars[charIndex])
-		}
-
-		asciiArt += "\n"
-	}
-
+	asciiArt, grayscaleImg := imageToASCII(scaledImg)
 	fmt.Println(asciiArt)
 
 	file, err := os.Create("tmp.jpeg")
@@ -57,15 +40,73 @@ func main() {
 	}
 }
 
-func clampDimmensions(bounds image.Rectangle) {
+func clampDimensions(img image.Image, targetWidth int, targetHeight int) image.Image {
+	bounds := img.Bounds()
 	originalWidth := bounds.Max.X
 	originalHeight := bounds.Max.Y
 
-	targetWidth := 200
-	targetHeight := (originalHeight * targetWidth) / originalWidth
+	// Calculate the missing dimension to preserve aspect ratio
+	if targetWidth == 0 && targetHeight > 0 {
+		// Calculate width based on height
+		targetWidth = int(float64(targetHeight) * float64(originalWidth) / float64(originalHeight))
+	} else if targetHeight == 0 && targetWidth > 0 {
+		// Calculate height based on width
+		targetHeight = int(float64(targetWidth) * float64(originalHeight) / float64(originalWidth))
+	}
 
-	scaledImg := image.NewNRGBA(image.Rect(0, 0, targetWidth, targetHeight))
-	fmt.Println(scaledImg)
+	// Create a new image with the target dimensions
+	scaledImg := image.NewRGBA(image.Rect(0, 0, targetWidth, targetHeight))
+
+	// Calculate scaling ratios
+	xRatio := float64(originalWidth) / float64(targetWidth)
+	yRatio := float64(originalHeight) / float64(targetHeight)
+
+	// Map pixels from the original image to the scaled image
+	for y := 0; y < targetHeight; y++ {
+		for x := 0; x < targetWidth; x++ {
+			// Calculate the corresponding pixel in the original image
+			srcX := int(float64(x) * xRatio)
+			srcY := int(float64(y) * yRatio)
+
+			// Get the pixel color from the original image
+			pixel := img.At(srcX, srcY)
+
+			// Set the pixel in the scaled image
+			scaledImg.Set(x, y, pixel)
+		}
+	}
+
+	return scaledImg
+}
+
+func imageToASCII(img image.Image) (string, image.Image) {
+	bounds := img.Bounds()
+	width, height := bounds.Max.X, bounds.Max.Y
+
+	//asciiChars := []byte(" .,:;i1tfLCG08@")
+	//asciiChars := []byte(" .:;+xX$&")
+	//asciiChars := reverse([]byte("@%#*+=-:. "))
+	asciiChars := reverse([]byte("$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "))
+
+	var asciiArt string
+	grayscaleImg := image.NewGray(bounds)
+
+	// Iterate over each pixel and map to ASCII
+	for y := bounds.Min.Y; y < height; y += 2 { // Skip every other row for better aspect ratio
+		for x := bounds.Min.X; x < width; x++ {
+			// Get the pixel color
+			pixel := img.At(x, y)
+			gray := color.GrayModel.Convert(pixel).(color.Gray)
+			grayscaleImg.Set(x, y, gray)
+
+			// Map the grayscale value to an ASCII character
+			charIndex := float64(gray.Y) / 255 * float64(len(asciiChars)-1)
+			asciiArt += string(asciiChars[int(charIndex)])
+		}
+		asciiArt += "\n"
+	}
+
+	return asciiArt, grayscaleImg
 }
 
 func reverse(input []byte) []byte {
