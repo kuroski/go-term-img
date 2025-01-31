@@ -24,9 +24,9 @@ func main() {
 		panic(err.Error())
 	}
 
-	scaledImg := clampDimensions(img, targetWidth, targetHeight)
+	scaledImg := scaleImage(img, targetWidth, targetHeight)
+	asciiArt, grayscaleImg := imageToASCIIArt(scaledImg)
 
-	asciiArt, grayscaleImg := imageToASCII(scaledImg)
 	fmt.Println(asciiArt)
 
 	file, err := os.Create("tmp.jpeg")
@@ -40,10 +40,9 @@ func main() {
 	}
 }
 
-func clampDimensions(img image.Image, targetWidth int, targetHeight int) image.Image {
+func scaleImage(img image.Image, targetWidth int, targetHeight int) image.Image {
 	bounds := img.Bounds()
-	originalWidth := bounds.Max.X
-	originalHeight := bounds.Max.Y
+	originalWidth, originalHeight := bounds.Max.X, bounds.Max.Y
 
 	// Calculate the missing dimension to preserve aspect ratio
 	if targetWidth == 0 && targetHeight > 0 {
@@ -79,7 +78,7 @@ func clampDimensions(img image.Image, targetWidth int, targetHeight int) image.I
 	return scaledImg
 }
 
-func imageToASCII(img image.Image) (string, image.Image) {
+func imageToASCIIArt(img image.Image) (string, image.Image) {
 	bounds := img.Bounds()
 	width, height := bounds.Max.X, bounds.Max.Y
 
